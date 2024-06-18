@@ -1,0 +1,17 @@
+spring:
+  application:
+    name: rabbitmq-demo
+
+  rabbitmq:
+    addresses: some-k8s-loadbalancer
+    username: user
+    password: password
+    publisher-confirm-type: correlated
+    publisher-returns: true
+    template:
+      mandatory: true
+      retry:
+        enabled: true
+        max-attempts: 100
+        multiplier: 2
+        max-interval: 120000
