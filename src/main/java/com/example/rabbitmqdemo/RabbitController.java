@@ -28,10 +28,12 @@ public class RabbitController {
     @GetMapping
     public ResponseEntity<String> sendMessage() {
 
-        for (int i = 0; i < 120_000; i++) {
-
-            this.sendMessage("myexchange", "myrouting", String.valueOf(i));
-
+        for (int i = 0; i < 500_000; i++) {
+            try {
+                this.sendMessage("myexchange", "myrouting", String.valueOf(i));
+            } catch (AmqpException e) {
+                log.error("Could not send message with id " + i, e);
+            }
         }
 
         return ResponseEntity.noContent().build();
