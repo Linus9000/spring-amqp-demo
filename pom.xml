@@ -18,8 +18,9 @@
     </properties>
     <dependencies>
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-amqp</artifactId>
+            <groupId>com.rabbitmq</groupId>
+            <artifactId>amqp-client</artifactId>
+            <version>5.21.0</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
