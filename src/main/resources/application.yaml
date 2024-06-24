@@ -3,9 +3,9 @@ spring:
     name: rabbitmq-demo
 
   rabbitmq:
-    addresses: some-k8s-loadbalancer
-    username: user
-    password: password
+    addresses: localhost
+    username: guest
+    password: guest
     publisher-confirm-type: correlated
     publisher-returns: true
     template:
