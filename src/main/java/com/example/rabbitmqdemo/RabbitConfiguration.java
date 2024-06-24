@@ -42,7 +42,6 @@ public class RabbitConfiguration {
     public Exchange myExchange() {
 
         DirectExchange directExchange = new DirectExchange("myexchange", true, false);
-        directExchange.setDelayed(true);
 
         return directExchange;
     }
@@ -53,16 +52,6 @@ public class RabbitConfiguration {
 
         return new Binding(myQueue.getName(), Binding.DestinationType.QUEUE, myExchange.getName(), "myrouting", null);
 
-    }
-
-
-    @Bean
-    public StatefulRetryOperationsInterceptor interceptor() {
-
-        return RetryInterceptorBuilder.stateful()
-                .maxAttempts(5)
-                .backOffOptions(1000, 2.0, 10000) // initialInterval, multiplier, maxInterval
-                .build();
     }
 
 }
