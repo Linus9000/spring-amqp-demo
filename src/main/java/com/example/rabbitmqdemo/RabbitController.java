@@ -29,6 +29,10 @@ public class RabbitController {
     private static final String DESTINATION_QUEUE_NAME = "myqueue";
     private static final String ROUTING_KEY = "myrouting";
 
+    private final ConcurrentNavigableMap<Long, String> outstandingConfirms = new ConcurrentSkipListMap<>();
+    Set<Integer> sentMessages = new HashSet<>();
+    Set<Integer> failedMessages = new HashSet<>();
+
 
     @GetMapping
     public ResponseEntity<String> sendMessage(@RequestParam(value = "count", defaultValue = "500000") int count) {
@@ -43,15 +47,14 @@ public class RabbitController {
 
         String status = "";
 
-        ConcurrentNavigableMap<Long, String> outstandingConfirms = new ConcurrentSkipListMap<>();
         ConfirmCallback cleanOutstandingConfirms = (sequenceNumber, multiple) -> {
             if (multiple) {
-                ConcurrentNavigableMap<Long, String> confirmed = outstandingConfirms.headMap(
+                ConcurrentNavigableMap<Long, String> confirmed = this.outstandingConfirms.headMap(
                         sequenceNumber, true
                 );
                 confirmed.clear();
             } else {
-                outstandingConfirms.remove(sequenceNumber);
+                this.outstandingConfirms.remove(sequenceNumber);
             }
         };
 
@@ -61,7 +64,7 @@ public class RabbitController {
 
             channel.confirmSelect();
             channel.addConfirmListener(cleanOutstandingConfirms, (sequenceNumber, multiple) -> {
-                String body = outstandingConfirms.get(sequenceNumber);
+                String body = this.outstandingConfirms.get(sequenceNumber);
                 log.error(String.format(
                         "Message with body %s has been nack-ed. Sequence number: %d, multiple: %b%n",
                         body, sequenceNumber, multiple)
@@ -74,23 +77,20 @@ public class RabbitController {
 
             log.info("Sending %s messages...".formatted(count));
 
-            Set<Integer> sentMessages = new HashSet<>(count);
-            Set<Integer> failedMessages = new HashSet<>();
-
 
             for (int i = 0; i < count; i++) {
                 try {
                     String body = String.valueOf(i);
-                    outstandingConfirms.put(channel.getNextPublishSeqNo(), body);
+                    this.outstandingConfirms.put(channel.getNextPublishSeqNo(), body);
                     channel.basicPublish(EXCHANGE_NAME, ROUTING_KEY, true, new AMQP.BasicProperties.Builder().deliveryMode(2).build(), body.getBytes());
-                    sentMessages.add(i);
+                    this.sentMessages.add(i);
                 } catch (Exception e) {
                     //log.error("Could not send message with id " + i, e);
-                    failedMessages.add(i);
+                    this.failedMessages.add(i);
                 }
             }
 
-            status = "Sent %s messages in total. Failed count: %s. Outstanding confirms: %s".formatted(sentMessages.size(), failedMessages.size(), outstandingConfirms.size());
+            status = "Sent %s messages in total. Failed count: %s.".formatted(this.sentMessages.size(), this.failedMessages.size());
 
         } catch (Exception e) {
             log.error("Could not connect to RabbitMQ", e);
@@ -100,6 +100,24 @@ public class RabbitController {
         log.info(status);
 
         return ResponseEntity.ok(status);
+    }
+
+
+    @GetMapping("/status")
+    public ResponseEntity<String> getStatus() {
+
+        return ResponseEntity.ok("Outstanding confirms: " + this.outstandingConfirms);
+    }
+
+
+    @GetMapping("/clear")
+    public ResponseEntity<String> clear() {
+
+        this.outstandingConfirms.clear();
+        this.sentMessages.clear();
+        this.failedMessages.clear();
+
+        return ResponseEntity.ok("Cleared");
     }
 
 }
