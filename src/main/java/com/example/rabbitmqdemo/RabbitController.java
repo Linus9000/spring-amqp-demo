@@ -5,6 +5,7 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.ConfirmCallback;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.apachecommons.CommonsLog;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.io.IOException;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -35,7 +37,7 @@ public class RabbitController {
 
 
     @GetMapping
-    public ResponseEntity<String> sendMessage(@RequestParam(value = "count", defaultValue = "500000") int count) {
+    public ResponseEntity<String> sendMessage(@RequestParam(value = "count", defaultValue = "500000") int count, HttpServletResponse response) throws IOException {
 
         ConnectionFactory factory = new ConnectionFactory();
 
@@ -99,14 +101,14 @@ public class RabbitController {
 
         log.info(status);
 
-        return ResponseEntity.ok(status);
+        response.sendRedirect("/status");
     }
 
 
     @GetMapping("/status")
     public ResponseEntity<String> getStatus() {
 
-        return ResponseEntity.ok("Outstanding confirms: " + this.outstandingConfirms);
+        return ResponseEntity.ok("Sent %s messages in total. Failed count: %s.".formatted(this.sentMessages.size(), this.failedMessages.size()));
     }
 
 
