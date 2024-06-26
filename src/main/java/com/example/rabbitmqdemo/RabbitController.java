@@ -102,6 +102,8 @@ public class RabbitController {
         log.info(status);
 
         response.sendRedirect("/status");
+
+        return ResponseEntity.ok().build();
     }
 
 
