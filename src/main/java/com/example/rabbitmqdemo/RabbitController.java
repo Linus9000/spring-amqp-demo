@@ -85,7 +85,7 @@ public class RabbitController {
                     channel.basicPublish(EXCHANGE_NAME, ROUTING_KEY, true, new AMQP.BasicProperties.Builder().deliveryMode(2).build(), body.getBytes());
                     sentMessages.add(i);
                 } catch (Exception e) {
-                    log.error("Could not send message with id " + i, e);
+                    //log.error("Could not send message with id " + i, e);
                     failedMessages.add(i);
                 }
             }
