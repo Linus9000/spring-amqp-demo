@@ -110,7 +110,7 @@ public class RabbitController {
     @GetMapping("/status")
     public ResponseEntity<String> getStatus() {
 
-        return ResponseEntity.ok("Sent %s messages in total. Failed count: %s.".formatted(this.sentMessages.size(), this.failedMessages.size()));
+        return ResponseEntity.ok("Sent %s messages in total. Failed count: %s. Outstanding confirms: %s".formatted(this.sentMessages.size(), this.failedMessages.size(), this.outstandingConfirms.size()));
     }
 
 
