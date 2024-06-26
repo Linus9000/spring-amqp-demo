@@ -90,7 +90,7 @@ public class RabbitController {
                 }
             }
 
-            status = "Sent %s messages in total. Failed count: %s".formatted(sentMessages.size(), failedMessages.size());
+            status = "Sent %s messages in total. Failed count: %s. Outstanding confirms: %s".formatted(sentMessages.size(), failedMessages.size(), outstandingConfirms.size());
 
         } catch (Exception e) {
             log.error("Could not connect to RabbitMQ", e);
