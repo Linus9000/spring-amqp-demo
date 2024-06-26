@@ -19,6 +19,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 
 @RestController
@@ -39,6 +41,7 @@ public class RabbitController {
     @GetMapping
     public ResponseEntity<String> sendMessage(@RequestParam(value = "count", defaultValue = "500000") int count, HttpServletResponse response) throws IOException {
 
+        CountDownLatch allMessagesConfirmed = new CountDownLatch(count);
         ConnectionFactory factory = new ConnectionFactory();
 
         factory.setUsername("guest");
@@ -54,9 +57,14 @@ public class RabbitController {
                 ConcurrentNavigableMap<Long, String> confirmed = this.outstandingConfirms.headMap(
                         sequenceNumber, true
                 );
+                for (int i = 0; i < confirmed.size(); i++)
+                {
+                    allMessagesConfirmed.countDown();
+                }
                 confirmed.clear();
             } else {
                 this.outstandingConfirms.remove(sequenceNumber);
+                allMessagesConfirmed.countDown();
             }
         };
 
@@ -74,7 +82,8 @@ public class RabbitController {
                 cleanOutstandingConfirms.handle(sequenceNumber, multiple);
             });
             channel.exchangeDeclare(EXCHANGE_NAME, "direct", true);
-            channel.queueDeclare(DESTINATION_QUEUE_NAME, true, false, false, Map.of("x-queue-type", "quorum"));
+            // channel.queueDeclare(DESTINATION_QUEUE_NAME, true, false, false, Map.of("x-queue-type", "quorum"));
+            channel.queueDeclare(DESTINATION_QUEUE_NAME, true, false, false, null);
             channel.queueBind(DESTINATION_QUEUE_NAME, EXCHANGE_NAME, ROUTING_KEY);
 
             log.info("Sending %s messages...".formatted(count));
@@ -92,12 +101,27 @@ public class RabbitController {
                 }
             }
 
+            try
+            {
+                log.info("Waiting for %s messages to be confirmed...".formatted(allMessagesConfirmed.getCount()));
+                if (allMessagesConfirmed.await(5, TimeUnit.SECONDS))
+                {
+                    log.info("SUCCESS - all messages have been confirmed.");
+                }
+                else
+                {
+                    log.warn("Not all messages have been confirmed after waiting 5 seconds!");
+                }
+            }
+            catch (InterruptedException e)
+            {
+            }
+
             status = "Sent %s messages in total. Failed count: %s.".formatted(this.sentMessages.size(), this.failedMessages.size());
 
         } catch (Exception e) {
             log.error("Could not connect to RabbitMQ", e);
         }
-
 
         log.info(status);
 
