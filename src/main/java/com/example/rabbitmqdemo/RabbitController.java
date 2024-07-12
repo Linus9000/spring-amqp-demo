@@ -29,9 +29,9 @@ public class RabbitController {
     private final RabbitTemplate rabbitTemplate;
 
     //private final Map<String, String> messagesToSend = new HashMap<>();
-    private final List<String> messagesDelivered = new ArrayList<>();
-    private final List<String> messagesFailed = new ArrayList<>();
-    private final List<String> messagesReceived = new ArrayList<>();
+    private final Set<String> messagesDelivered = new HashSet<>();
+    private final Set<String> messagesFailed = new HashSet<>();
+    private final Set<String> messagesReceived = new HashSet<>();
 
 
     public RabbitController(RabbitTemplate rabbitTemplate) {
@@ -127,7 +127,7 @@ public class RabbitController {
     }
 
 
-    List<String> listDuplicateUsingSet(List<String> list) {
+    List<String> listDuplicateUsingSet(Set<String> list) {
 
         List<String> duplicates = new ArrayList<>();
         Set<String> set = new HashSet<>();
