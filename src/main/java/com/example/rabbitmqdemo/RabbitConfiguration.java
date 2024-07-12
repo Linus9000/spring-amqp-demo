@@ -10,8 +10,6 @@ import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.retry.interceptor.RetryInterceptorBuilder;
-import org.springframework.retry.interceptor.StatefulRetryOperationsInterceptor;
 
 
 @Configuration
@@ -27,7 +25,12 @@ public class RabbitConfiguration {
     @Bean
     public RabbitTemplate rabbitTemplate(ConnectionFactory connectionFactory) {
 
-        return new RabbitTemplate(connectionFactory);
+        RabbitTemplate rabbitTemplate = new RabbitTemplate(connectionFactory);
+
+        rabbitTemplate.setMandatory(true);
+        //        rabbitTemplate.setChannelTransacted(true);
+
+        return rabbitTemplate;
     }
 
 
